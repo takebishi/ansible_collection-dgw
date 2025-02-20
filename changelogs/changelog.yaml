@@ -1,0 +1,17 @@
+ancestor: null
+releases:
+  1.0.0:
+    modules:
+    - description: Change DeviceGateway Configuration Parameter
+      name: dgw_change_param
+      namespace: ''
+    - description: Export DeviceGateway Configuration File
+      name: dgw_export_config_file
+      namespace: ''
+    - description: Get DeviceGateway Configuration Parameter
+      name: dgw_get_param
+      namespace: ''
+    - description: Import DeviceGateway Configuration File
+      name: dgw_import_config_file
+      namespace: ''
+    release_date: '2025-02-18'

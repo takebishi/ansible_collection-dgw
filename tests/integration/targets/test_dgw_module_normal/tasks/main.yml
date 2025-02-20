@@ -1,0 +1,108 @@
+# DGWコンテナ起動
+- name: start target container
+  shell: "sudo docker run --rm -d --name {{container_name}} ansible-dgw-target-image"
+  changed_when: False
+
+- name: pause
+  pause:
+    seconds: 5
+
+# 設定ファイルの出力を実施
+- name: Import config file
+  takebishi.dgw.dgw_import_config_file:
+    dgw_container_type: docker
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: "{{test_setting_file}}"
+  register: import_result
+  ignore_errors: yes
+
+- name: Check file exists
+  stat:
+    path: "{{test_setting_file}}"
+  register: stat_res
+
+- name: Verify result
+  assert:
+    that:
+      - import_result is success
+      - stat_res is success
+      - stat_res.stat.exists == true
+
+- name: Change parameter
+  takebishi.dgw.dgw_change_param:
+    src: "{{test_setting_file}}"
+    dest: "{{test_dir}}/changed_setting.dxg"
+    param_path: "Event.Item.event1.action.sleep1.setting.sleeptime.value"
+#    param_path: "DataSource.Device.device1.name"
+    param: "800"
+  register: change_res
+
+- name: Check file exists
+  stat:
+    path: "{{test_dir}}/changed_setting.dxg"
+  register: stat_res
+
+- name: Verify result
+  assert:
+    that:
+      - change_res is success
+      - stat_res is success
+      - stat_res.stat.exists == true
+
+- name: Get current parameter
+  takebishi.dgw.dgw_get_param:
+    src: "{{test_dir}}/changed_setting.dxg"
+    param_path: "Event.Item.event1.action.sleep1.setting.sleeptime.value"
+#    param_path: "DataSource.Device.800.name"
+  register: get_res
+
+- name: Verify result
+  assert:
+    that:
+      - get_res is success
+      - get_res.param == "800"
+
+- name: Export config file
+  takebishi.dgw.dgw_export_config_file:
+    dgw_container_type: docker
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: "{{test_dir}}/changed_setting.dxg"
+  register: export_res
+
+- name: Verify result
+  assert:
+    that:
+      - export_res is success
+      - export_res.changed == true
+
+- name: Case:No changes
+  takebishi.dgw.dgw_export_config_file:
+    dgw_container_type: docker
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: "{{test_dir}}/changed_setting.dxg"
+  register: export_res
+
+- name: Verify result
+  assert:
+    that:
+      - export_res is success
+      - export_res.changed == false
+
+# DGWコンテナ停止
+- name: stop target container
+  shell: "sudo docker stop {{container_name}}"
+
+- name: Delete file
+  file:
+    path:  "{{test_setting_file}}"
+    state: absent
+
+- name: Delete file
+  file:
+    path: "{{test_dir}}/changed_setting.dxg"
+    state: absent
+
+- name: Delete directory
+  file:
+    path: "{{test_dir}}"
+    state: absent

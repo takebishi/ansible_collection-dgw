@@ -1,0 +1,56 @@
+# ./inventory
+
+- hosts: develop
+  gather_facts: false
+  pre_tasks: 
+  # 変更ファイルの出力先作成
+  - name: Make Directory
+    file:
+      path: "{{work_dir}}"
+      state: directory
+      mode: '0755'
+    delegate_to: localhost
+    run_once: True
+
+# 開発環境のDGWから設定ファイルを取得
+  roles: 
+  - role: takebishi.dgw.dgw_import_config_file
+    vars:
+      dest: "{{import_file}}"
+      dgw_container_type: "{{container_type}}"
+
+# 生産ラインのDGWに設定を反映する
+- hosts: production
+  gather_facts: false
+  pre_tasks: 
+  # 指定のパラメータを取得
+  - name: Parameter Get
+    takebishi.dgw.dgw_get_param:
+      src: "{{import_file}}"
+      param_path: "{{change_param_path}}"
+    register: result
+    delegate_to: localhost
+  - name: Display result
+    debug:
+      msg: "{{change_param_path}} => {{result.param}}"
+    delegate_to: localhost
+
+  # 設定変更ファイルの出力
+  - name: Parameter Change
+    takebishi.dgw.dgw_change_param:
+      src: "{{import_file}}"
+      dest: "{{work_dir}}/export_{{inventory_hostname}}.dxg"
+      param_path: "{{change_param_path}}"
+      param: "{{change_val}}"
+    register: result
+    delegate_to: localhost
+
+  # 設定ファイル転送 & DGW再起動
+  roles:
+  - role: takebishi.dgw.dgw_export_config_file
+    vars:
+      src: "{{work_dir}}/export_{{inventory_hostname}}.dxg"
+      dgw_container_type: "{{container_type}}"
+  - role: takebishi.dgw.dgw_reboot
+    vars:
+      dgw_container_type: "{{container_type}}"

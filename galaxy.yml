@@ -1,0 +1,23 @@
+---
+namespace: takebishi
+name: dgw
+version: 1.0.0
+readme: README.md
+authors:
+  - TAKEBISHI CORPORATION <fa-support@takebishi.co.jp>
+description: Ansible Collection for Takebishi DeviceGeteway.
+license_file: 'LICENSE'
+tags:
+  - takebishi
+  - dgw
+  - devicegateway
+  - dgw-d20
+dependencies: {}
+repository: https://github.com/takebishi/ansible_collection-dgw
+homepage: https://www.faweb.net/en/product/devicegateway/
+version: "1.0.0"
+build_ignore:
+  - '.git/'
+  - '.vscode/'
+  - '.gitignore'
+  - 'changelogs/.plugin-cache.yaml'

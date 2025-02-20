@@ -1,0 +1,12 @@
+---
+requires_ansible: '>=2.19.0'
+plugin_routing:
+  modules:
+    import_config_file:
+      redirect: takebishi.dgw.dgw_import_config_file
+    export_config_file:
+      redirect: takebishi.dgw.dgw_export_config_file
+    get_param:
+      redirect: takebishi.dgw.dgw_get_param
+    change_param:
+      redirect: takebishi.dgw.dgw_change_param

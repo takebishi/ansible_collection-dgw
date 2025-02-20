@@ -1,0 +1,5 @@
+.vscode/
+__pycache__/
+tests/output/
+/*.tar.gz
+changelogs/.plugin-cache.yaml

@@ -1,0 +1,285 @@
+# DGWコンテナ起動
+- name: start target container
+  shell: "sudo docker run --rm -d --name {{container_name}} ansible-dgw-target-image"
+  changed_when: False
+
+- name: pause
+  pause:
+    seconds: 5
+
+- name: copy setting files
+  copy:
+    src: ./normal1.dxg
+    dest: .
+  changed_when: False
+
+- name: copy setting files
+  copy:
+    src: ./normal2.dxg
+    dest: .
+  changed_when: False
+
+# DGWのresultがエラー
+- name: Case:DGW result is an error
+  shell: "sudo docker exec {{container_name}} touch {{dgw_path}}/test_error"
+
+- name: Export config file
+  takebishi.dgw.dgw_export_config_file:
+    dgw_container_type: docker
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: ./normal1.dxg
+  register: export_res
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - export_res is failed
+      - export_res.changed == false
+
+- name: Delete test file
+  shell: "sudo docker exec {{container_name}} rm {{dgw_path}}/test_error"
+
+# result.logファイルができない
+- name: Case:DGW result not found
+  shell: "sudo docker exec {{container_name}} touch {{dgw_path}}/no_set_setting"
+
+- name: Export config file
+  takebishi.dgw.dgw_export_config_file:
+    dgw_container_type: docker
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: ./normal1.dxg
+  register: export_res
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - export_res is failed
+      - export_res.changed == false
+
+- name: Delete test file
+  shell: "sudo docker exec {{container_name}} rm {{dgw_path}}/no_set_setting"
+
+# result.logの中身が空
+- name: Case:DGW result is empty
+  shell: "sudo docker exec {{container_name}} touch {{dgw_path}}/test_empty"
+
+- name: Export config file
+  takebishi.dgw.dgw_export_config_file:
+    dgw_container_type: docker
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: ./normal1.dxg
+  register: export_res
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - export_res is failed
+      - export_res.changed == false
+
+- name: Delete test file
+  shell: "sudo docker exec {{container_name}} rm {{dgw_path}}/test_empty"
+
+# 設定ファイルがDGWから出力されない
+# 現在の設定が取得できない場合は新しい設定で更新する
+- name: Case:The configuration file is not output from DGW
+  shell: "sudo docker exec {{container_name}} touch {{dgw_path}}/no_get_setting"
+
+- name: Export config file
+  takebishi.dgw.dgw_export_config_file:
+    dgw_container_type: docker
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: ./normal1.dxg
+  register: export_res
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - export_res is success
+      - export_res.changed == true
+
+- name: Delete test file
+  shell: "sudo docker exec {{container_name}} rm {{dgw_path}}/no_get_setting"
+
+
+# コンテナタイプが不正
+- name: Export config file(Container type is invalid)
+  takebishi.dgw.dgw_export_config_file:
+    dgw_container_type: "dock"
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: ./normal1.dxg
+  register: export_res
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - export_res is failed
+
+# コンテナタイプが空
+- name: Export config file(Container type is empty)
+  takebishi.dgw.dgw_export_config_file:
+    dgw_container_type: ""
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: ./normal1.dxg
+  register: export_res
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - export_res is failed
+
+# コンテナタイプがNone
+- name: Export config file(Container type is none)
+  takebishi.dgw.dgw_export_config_file:
+    dgw_container_type: None
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: ./normal1.dxg
+  register: export_res
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - export_res is failed
+
+# 存在しないコンテナ名
+- name: Export config file(Container name does not exist)
+  takebishi.dgw.dgw_export_config_file:
+    dgw_container_type: "{{dgw_container_type}}"
+    dgw_container_name: "test-container"
+    host_setting_fpath: ./normal1.dxg
+  register: export_res
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - export_res is failed
+
+# コンテナ名が空
+- name: Export config file(Container name is empty)
+  takebishi.dgw.dgw_export_config_file:
+    dgw_container_type: "{{dgw_container_type}}"
+    dgw_container_name: ""
+    host_setting_fpath: ./normal1.dxg
+  register: export_res
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - export_res is failed
+
+# コンテナ名がNone
+- name: Export config file(Container name is none)
+  takebishi.dgw.dgw_export_config_file:
+    dgw_container_type: "{{dgw_container_type}}"
+    dgw_container_name: None
+    host_setting_fpath: ./normal1.dxg
+  register: export_res
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - export_res is failed
+
+# 設定ファイル出力先が空
+- name: Export config file(Setting file path is empty)
+  takebishi.dgw.dgw_export_config_file:
+    dgw_container_type: "{{dgw_container_type}}"
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: ""
+  register: export_res
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - export_res is failed
+
+# 設定ファイル出力先がNone
+- name: Export config file(Setting file path is none)
+  takebishi.dgw.dgw_export_config_file:
+    dgw_container_type: "{{dgw_container_type}}"
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: None
+  register: export_res
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - export_res is failed
+
+# 設定ファイルがhost_setting_fpathにない
+- name: Export config file(Setting file path is invalid)
+  takebishi.dgw.dgw_export_config_file:
+    dgw_container_type: "{{dgw_container_type}}"
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: ./normal3.dxg
+  register: export_res
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - export_res is failed
+
+# DGWのディレクトリがない
+- name: Delete request directory
+  shell: "sudo docker exec {{container_name}} rm -rf {{dgw_path}}"
+
+- name: Export config file(No directory in container)
+  takebishi.dgw.dgw_export_config_file:
+    dgw_container_type: docker
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: ./normal1.dxg
+  register: export_res
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - export_res is failed
+      - export_res.changed == false
+      - "'Create get_setting file ERROR' in export_res.errmsg"
+
+# DGWコンテナ停止
+- name: stop target container
+  shell: "sudo docker stop {{container_name}}"
+
+# コンテナが起動していない
+- name: Export config file(DGW container is not running)
+  takebishi.dgw.dgw_export_config_file:
+    dgw_container_type: docker
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: "{{test_dir}}/changed_setting.dxg"
+  register: export_res
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - export_res is failed
+      - export_res.changed == false
+
+- name: Delete file
+  file:
+    path:  "{{test_setting_file}}"
+    state: absent
+
+- name: Delete file
+  file:
+    path: "{{test_dir}}/changed_setting.dxg"
+    state: absent
+
+- name: Delete directory
+  file:
+    path: "{{test_dir}}"
+    state: absent

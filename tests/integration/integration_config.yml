@@ -1,0 +1,6 @@
+---
+dgw_path: /tmp/dgw_request
+dgw_setting_fpath: "{{dgw_path}}/setting.dxg"
+test_dir: /tmp/dgw
+test_setting_file: "{{test_dir}}/test_setting.dxg"
+container_name: ansible-dgw-target-container

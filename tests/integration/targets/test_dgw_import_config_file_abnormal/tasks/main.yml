@@ -1,0 +1,184 @@
+# DGWコンテナ起動
+- name: start target container
+  shell: "sudo docker run --rm -d --name {{container_name}} ansible-dgw-target-image"
+  changed_when: False
+
+- name: pause
+  pause:
+    seconds: 5
+
+# 設定ファイルがDGWから出力されない
+- name: Case:The configuration file is not output from DGW
+  shell: "sudo docker exec {{container_name}} touch {{dgw_path}}/no_get_setting"
+
+- name: Import config file
+  takebishi.dgw.dgw_import_config_file:
+    dgw_container_type: docker
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: "{{test_setting_file}}"
+  register: import_result
+  ignore_errors: yes
+
+- name: Check file exists
+  stat:
+    path: "{{test_setting_file}}"
+  register: stat_res
+
+- name: Verify result
+  assert:
+    that:
+      - import_result is failed
+      - stat_res is success
+      - stat_res.stat.exists == false
+
+- name: Delete test file
+  shell: "sudo docker exec {{container_name}} rm {{dgw_path}}/no_get_setting"
+
+- name: Delete file
+  file:
+    path: "{{test_setting_file}}"
+    state: absent
+  ignore_errors: yes
+
+
+# コンテナタイプが不正
+- name: Import config file(Container type is invalid)
+  takebishi.dgw.dgw_import_config_file:
+    dgw_container_type: "dock"
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: "{{test_setting_file}}"
+  register: import_result
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - import_result is failed
+
+# コンテナタイプが空
+- name: Import config file(Container type is empty)
+  takebishi.dgw.dgw_import_config_file:
+    dgw_container_type: ""
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: "{{test_setting_file}}"
+  register: import_result
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - import_result is failed
+
+# コンテナタイプがNone
+- name: Import config file(Container type is none)
+  takebishi.dgw.dgw_import_config_file:
+    dgw_container_type: None
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: "{{test_setting_file}}"
+  register: import_result
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - import_result is failed
+
+# 存在しないコンテナ名
+- name: Import config file(Container name does not exist)
+  takebishi.dgw.dgw_import_config_file:
+    dgw_container_type: "{{dgw_container_type}}"
+    dgw_container_name: "test-container"
+    host_setting_fpath: "{{test_setting_file}}"
+  register: import_result
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - import_result is failed
+
+# コンテナ名が空
+- name: Import config file(Container name is empty)
+  takebishi.dgw.dgw_import_config_file:
+    dgw_container_type: "{{dgw_container_type}}"
+    dgw_container_name: ""
+    host_setting_fpath: "{{test_setting_file}}"
+  register: import_result
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - import_result is failed
+
+# コンテナ名がNone
+- name: Import config file(Container name is none)
+  takebishi.dgw.dgw_import_config_file:
+    dgw_container_type: "{{dgw_container_type}}"
+    dgw_container_name: None
+    host_setting_fpath: "{{test_setting_file}}"
+  register: import_result
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - import_result is failed
+
+# 設定ファイル出力先が空
+- name: Import config file(Setting file path is empty)
+  takebishi.dgw.dgw_import_config_file:
+    dgw_container_type: "{{dgw_container_type}}"
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: ""
+  register: import_result
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - import_result is failed
+
+# 設定ファイル出力先がNone
+- name: Import config file(Setting file path is none)
+  takebishi.dgw.dgw_import_config_file:
+    dgw_container_type: "{{dgw_container_type}}"
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: None
+  register: import_result
+  ignore_errors: yes
+
+- name: Verify result
+  assert:
+    that:
+      - import_result is failed
+
+# DGWコンテナ停止
+- name: stop target container
+  shell: "sudo docker stop {{container_name}}"
+
+# DGWコンテナが起動していない
+- name: Import config file(DGW container is not running) 
+  takebishi.dgw.dgw_import_config_file:
+    dgw_container_type: docker
+    dgw_container_name: "{{container_name}}"
+    host_setting_fpath: "{{test_setting_file}}"
+  register: import_result
+  ignore_errors: yes
+
+- name: Check file exists
+  stat:
+    path: "{{test_setting_file}}"
+  register: stat_res
+
+- name: Verify result
+  assert:
+    that:
+      - import_result is failed
+      - stat_res is success
+      - stat_res.stat.exists == false
+
+- name: Delete directory
+  file:
+    path: "{{test_dir}}"
+    state: absent

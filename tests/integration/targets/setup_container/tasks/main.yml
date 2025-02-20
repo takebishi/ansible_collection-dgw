@@ -1,0 +1,74 @@
+- name: Uninstall old versions
+  package:
+    name:
+      - docker.io
+      - docker-compose
+      - docker-compose-v2
+      - docker-doc
+      - podman-docker
+      - containerd
+      - runc
+    state: absent
+
+- name: Install APT packages to use a repository over HTTPS
+  package:
+    name:
+      - ca-certificates
+      - curl
+
+- name: Create APT's keyrings directory
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    force: true
+    mode: '0755'
+
+- name: Add Docker's official GPG key
+  shell:
+    cmd: curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    creates: /etc/apt/keyrings/docker.asc
+  changed_when: False
+
+- name: Setup the repository
+  shell:
+    cmd: echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null          
+    creates: /etc/apt/sources.list.d/docker.list
+  changed_when: False
+
+- name: apt update
+  apt:
+    update_cache: yes
+  changed_when: False
+
+- name: Install Docker
+  package:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin 
+      - docker-compose-plugin
+  changed_when: False
+
+- name: copy dockerfile
+  copy:
+    src: ../container
+    dest: .
+  changed_when: False
+
+- name: stop target container
+  shell: "sudo docker stop {{container_name}}"
+  ignore_errors: yes
+
+- name: remove target container
+  shell: "sudo docker rm {{container_name}}"
+  ignore_errors: yes
+
+- name: remove target image
+  shell: "sudo docker rmi ansible-dgw-target-image"
+  ignore_errors: yes
+
+- name: build target image
+  shell:
+    cmd: docker build ./container/ -t ansible-dgw-target-image
+  changed_when: False
