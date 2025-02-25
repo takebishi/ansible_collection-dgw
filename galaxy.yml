@@ -11,7 +11,6 @@ tags:
   - takebishi
   - dgw
   - devicegateway
-  - dgw-d20
 dependencies: {}
 repository: https://github.com/takebishi/ansible_collection-dgw
 homepage: https://www.faweb.net/en/product/devicegateway/
